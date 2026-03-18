@@ -7,8 +7,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "books")
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class Book {
@@ -21,8 +20,14 @@ public class Book {
 
     @Column(unique = true)
     private String isbn;
-    @Column(name = "price")
+
     private Integer price;
-    @Column(name = "publish_date")
     private LocalDate publishDate;
+
+    public void updateFields(String title, String author, Integer price, LocalDate publishDate) {
+        if (title != null) this.title = title;
+        if (author != null) this.author = author;
+        if (price != null) this.price = price;
+        if (publishDate != null) this.publishDate = publishDate;
+    }
 }

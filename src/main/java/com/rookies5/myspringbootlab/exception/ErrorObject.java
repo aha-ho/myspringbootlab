@@ -1,15 +1,21 @@
 package com.rookies5.myspringbootlab.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
+@Data
 public class ErrorObject {
-    private int statusCode;
+    private Integer statusCode;
     private String message;
-    private long timestamp;
+    private String timestamp;
+
+    public String getTimestamp() {
+        LocalDateTime ldt = LocalDateTime.now();
+        return DateTimeFormatter.ofPattern(
+                "yyyy-MM-dd HH:mm:ss E a",
+                Locale.KOREA).format(ldt);
+    }
 }

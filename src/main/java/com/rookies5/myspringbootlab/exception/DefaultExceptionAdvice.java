@@ -1,19 +1,86 @@
 package com.rookies5.myspringbootlab.exception;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice // 모든 컨트롤러의 예외를 감시합니다.
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+@Slf4j
 public class DefaultExceptionAdvice {
 
+    // 1. 비즈니스 예외 처리 (도서 미존재, ISBN 중복 등)
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ErrorObject> handleBusinessException(BusinessException e) {
-        ErrorObject error = new ErrorObject();
-        error.setStatusCode(e.getStatus().value());
-        error.setMessage(e.getMessage());
-        error.setTimestamp(System.currentTimeMillis());
+    public ResponseEntity<ErrorObject> handleBusinessException(BusinessException ex) {
+        ErrorObject errorObject = new ErrorObject();
+        errorObject.setStatusCode(ex.getHttpStatus().value());
+        errorObject.setMessage(ex.getMessage());
 
-        return new ResponseEntity<>(error, e.getStatus());
+        log.error("Business Exception: {}", ex.getMessage());
+
+        return new ResponseEntity<>(errorObject, HttpStatusCode.valueOf(ex.getHttpStatus().value()));
+    }
+
+    // 2. 타입 불일치 오류 (숫자 필드에 문자열 입력 등)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    protected ResponseEntity<Object> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("message", "데이터 형식이 올바르지 않습니다.");
+        result.put("httpStatus", HttpStatus.BAD_REQUEST.value());
+
+        log.error("Message Not Readable: {}", e.getMessage());
+        return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+    }
+
+    // 3. 입력값 검증 오류 (@Valid 관련)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+
+        log.error("Validation Error: {}", errors);
+
+        ValidationErrorResponse response = new ValidationErrorResponse(
+                400,
+                "입력항목 검증 오류",
+                LocalDateTime.now(),
+                errors
+        );
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    // 4. 일반적인 런타임 오류
+    @ExceptionHandler(RuntimeException.class)
+    protected ResponseEntity<ErrorObject> handleRuntimeException(RuntimeException e) {
+        ErrorObject errorObject = new ErrorObject();
+        errorObject.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        errorObject.setMessage("서버 내부 오류: " + e.getMessage());
+
+        log.error("Runtime Exception: ", e);
+        return new ResponseEntity<>(errorObject, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Getter @Setter @AllArgsConstructor
+    public static class ValidationErrorResponse {
+        private int status;
+        private String message;
+        private LocalDateTime timestamp;
+        private Map<String, String> errors;
     }
 }

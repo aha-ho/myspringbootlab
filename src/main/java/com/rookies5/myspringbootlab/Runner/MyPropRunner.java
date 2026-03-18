@@ -1,32 +1,45 @@
-package com.rookies5.myspringbootlab.Runner;
+package com.rookies5.myspringbootlab.runner;
 
 import com.rookies5.myspringbootlab.config.MyEnvironment;
 import com.rookies5.myspringbootlab.property.MyPropProperties;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-@Slf4j
-//@Component
-@RequiredArgsConstructor
-public class MyPropRunner implements ApplicationRunner {
+import java.util.function.Consumer;
 
-    // Properties 클래스 주입
-    private final MyPropProperties myPropProperties;
-    private final MyEnvironment myEnvironment;
+@Component
+public class MyPropRunner implements ApplicationRunner {
+    @Value("${myprop.username}")
+    private String username;
+
+    @Value("${myprop.port}")
+    private int port;
+
+    @Autowired
+    private MyPropProperties properties;
+
+    @Autowired
+    private MyEnvironment myEnvironment;
+
+    //Logger
+    private Logger logger = LoggerFactory.getLogger(MyPropRunner.class);
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        log.info("==============================================");
-        log.info("현재 실행 모드: {}", myEnvironment.getMode());
-        log.info("Properties 객체를 통한 출력");
-        log.info("사용자 이름: {}", myPropProperties.getUsername());
-        log.info("랜덤 포트 번호: {}", myPropProperties.getPort());
-        log.debug("디버그용 상세 정보 - 사용자: {}", myPropProperties.getUsername());
-        log.debug("디버그용 상세 정보 - 포트: {}", myPropProperties.getPort());
-        log.info("프로그램이 정상적으로 실행되었습니다.");
-        log.info("==============================================");
+        System.out.println("Logger 구현체 클래스명 = " + logger.getClass().getName());
+
+        logger.info("Property username: "+ username);
+        logger.info("Property port : " + port);
+
+        logger.debug("MyBootProperties getUsername() = " + properties.getUsername());
+        logger.debug("MyBootProperties getPort() = " + properties.getPort());
+
+        logger.info("MyEnvironment getMode :" + myEnvironment.getMode());
+
     }
 }
